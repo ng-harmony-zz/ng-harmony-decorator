@@ -1,4 +1,5 @@
 import "ng-harmony-log";
+import "reflect-metadata";
 
 export function Tag(val) {
 	return function decorator(target) {
@@ -77,15 +78,28 @@ export function Logging() {
 	}
 }
 
-export function validate() {
+export function Validate() {
 	return function decorator(target, prop, descriptor) {
+		let isNullable = (Reflect.hasMetadata("nullable", p) && Reflect.getMetadata("nullable", p));
+
+		if (isNullable) {
+			target[prop] = null;
+		}
+
 		descriptor.configurable = true;
 		descriptor.enumerable = true;
 		descriptor.writable = true;
 		descriptor.get = () => {
-			return target;
+			return target[prop];
 		}
 		descriptor.set = (val) => {
+			if (val === null || typeof val === "undefined")
+				if (isNullable) {
+					return;
+				}
+				else {
+					throw new VoidError();
+				}
 			try {
 				if (typeof this[`_${prop}`] !== "undefined" && this[`_${prop}`] !== null)
 					this[`_${prop}`](val);
@@ -97,8 +111,8 @@ export function validate() {
 					throw e;
 				}
 			}
-			if (Reflect.hasMetadata("typeof", target)) {
-				let metadata = Reflect.getMetadata("typeof", target);
+			if (Reflect.hasMetadata("typeof", target[prop])) {
+				let metadata = Reflect.getMetadata("typeof", target[prop]);
 				let t = metadata.type.name.toLowerCase();
 				if (val instanceof metadata.type) {
 					target = new metadata.type(val);
@@ -109,5 +123,10 @@ export function validate() {
 				}
 			}
 		}
+	}
+}
+export function Nullable () {
+	return function decorator(target, prop, descriptor) {
+		Reflect.defineMetadata("nullable", true, target, prop);
 	}
 }
