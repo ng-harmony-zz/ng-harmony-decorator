@@ -102,6 +102,7 @@ export function Validate() {
 			} catch (e) {
 				if (e.level === "info" || e.level === "debug") {
 					this.log(e);
+					return;
 				} else {
 					throw e;
 				}
