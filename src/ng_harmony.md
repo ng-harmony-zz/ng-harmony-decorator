@@ -33,8 +33,9 @@ The Decorator foos are annotation-driving translators that allow you to use Angu
 Import all needed stuff
 
 ```javascript
-import "ng-harmony-log";
 import "reflect-metadata";
+import "ng-harmony-log";
+import { PropertyTransformer } from "ng-harmony/ng-harmony-model";
 ```
 
 The `Tag-Decorator` is angulars directive-mechanism
@@ -160,9 +161,10 @@ Minimal requirements of the err-obj:
 * "message": "My Msg describing a situation deserving attention"
 
 ```javascript
-export function Logging() {
+export function Logging(level) {
 	return function decorator(target) {
 		target.mixin(Log);
+		target.DEBUG_LEVEL = level || "info";
 	}
 }
 ```
@@ -172,11 +174,7 @@ Validator class property decorator
 ```javascript
 export function Validate() {
 	return function decorator(target, prop, descriptor) {
-		let isNullable = (Reflect.hasMetadata("nullable", p) && Reflect.getMetadata("nullable", p));
-
-		if (isNullable) {
-			target[prop] = null;
-		}
+		let isNullable = (Reflect.hasMetadata("nullable", target[prop]) && Reflect.getMetadata("nullable", target[prop]));
 
 		descriptor.configurable = true;
 		descriptor.enumerable = true;
@@ -208,9 +206,9 @@ export function Validate() {
 				let metadata = Reflect.getMetadata("typeof", target[prop]);
 				let t = metadata.type.name.toLowerCase();
 				if (val instanceof metadata.type) {
-					target = new metadata.type(val);
+					target[prop] = new metadata.type(val);
 				} else if (typeof val == t) {
-					target = val;
+					target[prop] = val;
 				} else {
 					throw new InMemoryTypeValidationError();
 				}
@@ -218,14 +216,77 @@ export function Validate() {
 		}
 	}
 }
+
 export function Nullable () {
 	return function decorator(target, prop, descriptor) {
 		Reflect.defineMetadata("nullable", true, target, prop);
+
+		if (typeof target[prop] === "undefined") {
+			target[prop] = null;
+		}
+	}
+}
+
+export function Derived(o) {
+	return function decorator(target, prop, descriptor) {
+		let metadata = Reflect.hasMetadata("typeof", target[prop]) && Reflect.getMetadata("typeof", target[prop]);
+
+		if (!((new metadata.type()) instanceof PropertyTransform)) {
+			throw new Error();
+		}
+
+		let isNullable = (Reflect.hasMetadata("nullable", target[prop]) && Reflect.getMetadata("nullable", target[prop]));
+
+		descriptor.configurable = true;
+		descriptor.enumerable = false;
+		descriptor.writable = true;
+		descriptor.get = () => {
+			if (target[prop] === null || typeof target[prop] === "undefined") {
+				if (isNullable) {
+					return null;
+				} else {
+					throw new VoidError();
+				}
+			}
+			return target[prop].out();
+		}
+		descriptor.set = (_o) => {
+			try {
+				if (_o === null || typeof _o === "undefined")
+					if (isNullable) {
+						return;
+					}
+					else {
+						throw new VoidError("No Input given");
+					}
+				}
+				target[prop] instanceof PropertyTransformer ?
+					target[prop].in(_o) :
+					new metadata.type(_o);
+			}
+			catch (e) {
+				if (e.level === "info" || e.level ==="debug") {
+					this.log(e);
+					return;
+				} else {
+					throw e;
+				}
+			}
+		}
+	}
+}
+
+export function IO (o) {
+	return function decorator (target) {
+		o.server.RECEPTOR.push(target);
+		target.MODEL = o.client;
 	}
 }
 ```
 
+
 ## CHANGELOG
+*v0.3.6* IO/Model-Decorator, Derived/Model-Decorator
 *v0.3.3* Nullable Decorator plus integration of nullable and set null in Validate
 *v0.3.2* Differentiation SubModel or Primitive in Validate-director
 *v0.3.1* More specific error, adequate import, "Content"-Validation-Method-check
