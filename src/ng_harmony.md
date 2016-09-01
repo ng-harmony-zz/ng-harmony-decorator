@@ -87,41 +87,23 @@ export function Service(val) {
 }
 ```
 
-The Transient-Mixin for the Route/Stateful-Controllers
-
-`Usage:`
-Transient([{
-	css: "body > myContainer > myComponent:nth-child(3)",
-	uid: "MyContainer.MyComponent3"
-}, {
-	css: "body > .easilySelectable",
-	uid: "EasilySelectable"
-}])
-
-```javascript
-export function Transient(val) {
-	return function decorator(target) {
-		target.LISTENERS = val;
-	}
-}
-```
-
 A Mixin Decorator
 
 `Usage:`
 @Mixin(UtilityClass)
 class Useful extends RockSolid {}
 
-@Mixin([Util1, Util2, Util3])
+@Mixin(Util1, Util2, Util3)
 class UtilCollection extends DOMElement
 
 ```javascript
-export function Mixin(val) {
+export function Mixin(...mixins) {
 	return function decorator(target) {
-		if (Array.isArray(val)) {
-			target.mixin(...val);
-		} else {
-			target.mixin(val);
+		for (let [i, mixin] of mixins.entries()) {
+			Object.keys(mixin).forEach((k, j) => {
+				(target.prototype[k] === null || typeof target.prototype[k] === "undefined") &&
+				Object.defineProperty(target.prototype, k, Object.getOwnPropertyDescriptor(mixin, k));
+			});
 		}
 	}
 }
@@ -138,12 +120,16 @@ class ContactValidator
 throw a `NotImplementedError` unless overridden
 
 ```javascript
-export function Implements(val) {
+export function Implements(...interfaces) {
 	return function decorator(target) {
-		if (Array.isArray(val)) {
-			target.implement(...val);
-		} else {
-			target.implement(val);
+		for (let [i, Interface] of interfaces.entries()) {
+			Object.keys(Interface).forEach((k, j) => {
+				(target.prototype[k] === null || typeof target.prototype[k] === "undefined") &&
+				Object.defineProperty(target.prototype, k, {
+					value: () => { throw new NotImplementedError(k); },
+					enumerable: true
+				});
+			}
 		}
 	}
 }
@@ -163,7 +149,13 @@ Minimal requirements of the err-obj:
 ```javascript
 export function Logging(level) {
 	return function decorator(target) {
-		target.mixin(Log);
+		Object.keys(Log).forEach((k, j) => {
+			(target.prototype[k] === null || typeof target.prototype[k] === "undefined") &&
+			Object.defineProperty(target.prototype, k, {
+				value: () => { throw new NotImplementedError(k); },
+				enumerable: true
+			});
+		}
 		target.DEBUG_LEVEL = level || "info";
 	}
 }
@@ -283,9 +275,34 @@ export function IO (o) {
 	}
 }
 ```
+The Transient-Mixin for the Route/Stateful-Controllers
+
+`Usage:`
+Subscriber({
+	css: "body > myContainer > myComponent:nth-child(3)",
+	uid: "MyContainer.MyComponent3"
+}, {
+	css: "body > .easilySelectable",
+	uid: "EasilySelectable"
+})
+```javascript
+export function PubSub (...o) {
+	return function decorator (target) {
+		target.LISTENERS = o;
+	}
+}
+
+export function Evented (...o) {
+	return function decorator (target, prop, descriptor) {
+		target.EVENTS = target.EVENTS || [];
+		o.forEach((ev) => { target.EVENTS.push(ev); });
+	}
+}
+```
 
 
 ## CHANGELOG
+*v0.3.7* Mixin standalone, PubSub
 *v0.3.6* IO/Model-Decorator, Derived/Model-Decorator
 *v0.3.3* Nullable Decorator plus integration of nullable and set null in Validate
 *v0.3.2* Differentiation SubModel or Primitive in Validate-director
