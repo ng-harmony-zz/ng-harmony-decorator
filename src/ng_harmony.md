@@ -1,6 +1,4 @@
-
 # Ng-Harmony-Decorate
-=====================
 
 ## Development
 
@@ -15,8 +13,8 @@ This extra lib to ng-harmony will serve the purpose of providing decorators in A
 
 Use it in conjunction with
 
-* [literate-programming](http://npmjs.org/packages/literate-programming "click for npm-package-homepage") to write markdown-flavored literate JS, HTML and CSS
-* [jspm](https://www.npmjs.com/package/jspm "click for npm-package-homepage") for a nice solution to handle npm-modules with ES6-Module-Format-Loading ...
+	* [literate-programming](http://npmjs.org/packages/literate-programming "click for npm-package-homepage") to write markdown-flavored literate JS, HTML and CSS
+	* [jspm](https://www.npmjs.com/package/jspm "click for npm-package-homepage") for a nice solution to handle npm-modules with ES6-Module-Format-Loading ...
 
 ## Files
 
@@ -51,19 +49,26 @@ export function Tag(val) {
 				replace: val.replace || false,
 				templateUrl: val.templateUrl || null,
 				template: val.template || null,
-				scope: val.scope === true ? {} : (val.scope || null)
-			}
+				scope: val.scope === true ? {} : val.scope || null
+			};
 		});
-
 	}
 }
 
 export function Controller(val) {
 	return function decorator(target) {
+		let proto = this.prototype;
+		Object.getOwnPropertyNames(proto).forEach((key, i) => {
+			if (typeof proto[key] === "function" &&
+				key[0] === "$") {
+					this.$scope[key] = proto[key].bind(this);
+			}
+		});
+
 		let r = {};
 		r[val.module] = {
 			type: "controller",
-			name: val.name
+			name: target.name
 		}
 		target.$register = r;
 		if (val.deps !== null && typeof val.deps !== "undefined") {
@@ -129,7 +134,7 @@ export function Implements(...interfaces) {
 					value: () => { throw new NotImplementedError(k); },
 					enumerable: true
 				});
-			}
+			});
 		}
 	}
 }
@@ -155,7 +160,7 @@ export function Logging(level) {
 				value: () => { throw new NotImplementedError(k); },
 				enumerable: true
 			});
-		}
+		});
 		target.DEBUG_LEVEL = level || "info";
 	}
 }
@@ -244,7 +249,7 @@ export function Derived(o) {
 		}
 		descriptor.set = (_o) => {
 			try {
-				if (_o === null || typeof _o === "undefined")
+				if (_o === null || typeof _o === "undefined") {
 					if (isNullable) {
 						return;
 					}
@@ -300,8 +305,37 @@ export function Evented (...o) {
 }
 ```
 
+The `UniqueArray`-decorator enhances a property with getters and setters and
+guarantees uniqueness of it's elements by comparing property by property ...
+Should a new obj extend the old one, and be so to speak "at least" equal, but
+have some more properties, these will not be added
+
+```javascript
+export function UniqueArray() {
+	return function decorator(target, prop, descriptor) {
+		descriptor.configurable = true;
+		descriptor.enumerable = false;
+		descriptor.writable = true;
+		descriptor.get = () => {
+			return target[`_${prop}`] || [];
+		}
+		descriptor.set = (pushee) => {
+			let valid = !target[prop].filter((currentItem) => {
+	                let truthy = true;
+					Object.keys(curentItem).forEach((prop) => {
+						return truthy &= (newItem[prop] === currentItem[prop]);
+	                });
+	                return !!truthy;
+	            }).length;
+			target[prop].concat(valid ? _pushee : []);
+			return valid;
+		}
+	}
+}
+```
 
 ## CHANGELOG
+*v0.3.8* UniqueArray
 *v0.3.7* Mixin standalone, PubSub
 *v0.3.6* IO/Model-Decorator, Derived/Model-Decorator
 *v0.3.3* Nullable Decorator plus integration of nullable and set null in Validate
