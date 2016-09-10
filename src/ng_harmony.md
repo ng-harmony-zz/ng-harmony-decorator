@@ -33,7 +33,8 @@ Import all needed stuff
 ```javascript
 import "reflect-metadata";
 import "ng-harmony-log";
-import { PropertyTransformer } from "ng-harmony/ng-harmony-model";
+import { PropertyTransformer } from "ng-harmony-model";
+import { Plug } from "ng-harmony-enum";
 ```
 
 The `Tag-Decorator` is angulars directive-mechanism
@@ -334,7 +335,35 @@ export function UniqueArray() {
 }
 ```
 
+Pluggable is the mechanism to provide for statefulness of controllers/components
+It seems convenient/useful to create for each interaction/state so called Plugs,
+then sum them up in small objects to describe ...
+
+`
+{
+	IN: EventPlug | Plug
+	transition: () => {
+		this.myInternalFoo();
+		this.myInternalFoo2();
+	}
+	OUT: Plug
+}
+`
+```javascript
+export function Pluggable(...plugs) {
+	return function decorator(target, prop, descriptor) {
+		plugs.forEach((plug, nr) => {
+			if (!plug instanceof Plug) {
+				throw new TypeMismatchError(`Plug ${nr} isn't of type plug`);
+			}
+		})
+	}
+}
+```
+
 ## CHANGELOG
+*v0.3.10* Debug
+*v0.3.9* Pluggable
 *v0.3.8* UniqueArray
 *v0.3.7* Mixin standalone, PubSub
 *v0.3.6* IO/Model-Decorator, Derived/Model-Decorator
@@ -347,4 +376,4 @@ export function UniqueArray() {
     * Adding `Validator-Mixin`
 *v0.2.2* Bugfix in Component (Logic)
 *v0.1.9* Battle Testing and Debugging on the way
-*v0.1.10* Renaming decision of directive to component
+*v0.1.10* Renaming decision of directive to
