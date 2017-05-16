@@ -313,6 +313,7 @@ export function Evented (...o) {
 ```
 
 ## CHANGELOG
+*v0.3.13* Publish bump
 *v0.3.12* More Debugging
 *v0.3.11* Debugging n Adaption Session, getting rid of faulty UniqueArray
 *v0.3.10* Debug
