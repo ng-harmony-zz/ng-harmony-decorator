@@ -1,13 +1,13 @@
 import "reflect-metadata";
 import "ng-harmony-log";
-import { PropertyTransformer } from "ng-harmony/ng-harmony-model";
 
-export function Tag(val) {
+export function Component(val) {
 	return function decorator(target) {
 		let mod = angular.module(val.module) || angular.module(val.module, []);
 		mod.directive(val.selector, () => {
 			return {
 				controller: val.ctrl,
+				controllerAs: val.ctrlAs || null,
 				restrict: val.restrict || "A",
 				replace: val.replace || false,
 				templateUrl: val.templateUrl || null,
@@ -103,13 +103,18 @@ export function Validate() {
 			return target[prop];
 		};
 		descriptor.set = val => {
-			if (val === null || typeof val === "undefined") if (isNullable) {
-				return;
-			} else {
-				throw new VoidError();
+			if (val === null || typeof val === "undefined") {
+				if (isNullable) {
+					target[prop] = val;
+					return;
+				} else {
+					throw new VoidError();
+				}
 			}
 			try {
-				if (typeof this[`_${ prop }`] !== "undefined" && this[`_${ prop }`] !== null) this[`_${ prop }`](val);
+				if (typeof this[`_${prop}`] === "function") {
+					this[`_${prop}`](val);
+				}
 			} catch (e) {
 				if (e.level === "info" || e.level === "debug") {
 					this.log(e);
@@ -122,11 +127,14 @@ export function Validate() {
 				let metadata = Reflect.getMetadata("typeof", target[prop]);
 				let t = metadata.type.name.toLowerCase();
 				if (val instanceof metadata.type) {
-					target[prop] = new metadata.type(val);
-				} else if (typeof val == t) {
 					target[prop] = val;
 				} else {
-					throw new InMemoryTypeValidationError();
+					try {
+						target[prop] = new metadata.type(val);
+					} catch (e) {
+						this.log(new InMemoryTypeValidationError());
+						throw e;
+					}
 				}
 			}
 		};
@@ -135,22 +143,15 @@ export function Validate() {
 
 export function Nullable() {
 	return function decorator(target, prop, descriptor) {
-		Reflect.defineMetadata("nullable", true, target, prop);
-
 		if (typeof target[prop] === "undefined") {
 			target[prop] = null;
 		}
+		Reflect.defineMetadata("nullable", true, target, prop);
 	};
 }
 
-export function Derived(o) {
+export function Transform(derive) {
 	return function decorator(target, prop, descriptor) {
-		let metadata = Reflect.hasMetadata("typeof", target[prop]) && Reflect.getMetadata("typeof", target[prop]);
-
-		if (!(new metadata.type() instanceof PropertyTransform)) {
-			throw new Error();
-		}
-
 		let isNullable = Reflect.hasMetadata("nullable", target[prop]) && Reflect.getMetadata("nullable", target[prop]);
 
 		descriptor.configurable = true;
@@ -164,7 +165,7 @@ export function Derived(o) {
 					throw new VoidError();
 				}
 			}
-			return target[prop].out();
+			return target[`_$(prop)`];
 		};
 		descriptor.set = _o => {
 			try {
@@ -175,7 +176,7 @@ export function Derived(o) {
 						throw new VoidError("No Input given");
 					}
 				}
-				target[prop] instanceof PropertyTransformer ? target[prop].in(_o) : new metadata.type(_o);
+				target[`_$(prop)`] = derive(_o);
 			} catch (e) {
 				if (e.level === "info" || e.level === "debug") {
 					this.log(e);
@@ -188,16 +189,9 @@ export function Derived(o) {
 	};
 }
 
-export function IO(o) {
-	return function decorator(target) {
-		o.server.RECEPTOR.push(target);
-		target.MODEL = o.client;
-	};
-}
-
-export function PubSub(...o) {
-	return function decorator(target) {
-		target.LISTENERS = o;
+export function AjaxMap(o) {
+	return function decorator(target, prop, descriptor) {
+		target.MAP = o;
 	};
 }
 
@@ -205,30 +199,11 @@ export function Evented(...o) {
 	return function decorator(target, prop, descriptor) {
 		target.EVENTS = target.EVENTS || [];
 		o.forEach(ev => {
-			target.EVENTS.push(ev);
+			target.EVENTS.push({
+				e: ev,
+				fn: prop
+			});
 		});
-	};
-}
-
-export function UniqueArray() {
-	return function decorator(target, prop, descriptor) {
-		descriptor.configurable = true;
-		descriptor.enumerable = false;
-		descriptor.writable = true;
-		descriptor.get = () => {
-			return target[`_${ prop }`] || [];
-		};
-		descriptor.set = pushee => {
-			let valid = !target[prop].filter(currentItem => {
-				let truthy = true;
-				Object.keys(curentItem).forEach(prop => {
-					return truthy &= newItem[prop] === currentItem[prop];
-				});
-				return !!truthy;
-			}).length;
-			target[prop].concat(valid ? _pushee : []);
-			return valid;
-		};
 	};
 }
 
