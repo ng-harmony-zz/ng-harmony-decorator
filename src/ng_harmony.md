@@ -33,8 +33,6 @@ Import all needed stuff
 ```javascript
 import "reflect-metadata";
 import "ng-harmony-log";
-import { PropertyTransformer } from "ng-harmony-model";
-import { Plug } from "ng-harmony-enum";
 ```
 
 The `Tag-Decorator` is angulars directive-mechanism
@@ -302,21 +300,6 @@ export function AjaxMap(o) {
 		target.MAP = o;
 	}
 }
-```
-`Usage:`
-Subscriber({
-	css: "body > myContainer > myComponent:nth-child(3)",
-	uid: "MyContainer.MyComponent3"
-}, {
-	css: "body > .easilySelectable",
-	uid: "EasilySelectable"
-})
-```javascript
-export function PubSub (...o) {
-	return function decorator (target) {
-		target.LISTENERS = o;
-	}
-}
 
 export function Evented (...o) {
 	return function decorator (target, prop, descriptor) {
@@ -330,6 +313,7 @@ export function Evented (...o) {
 ```
 
 ## CHANGELOG
+*v0.3.12* More Debugging
 *v0.3.11* Debugging n Adaption Session, getting rid of faulty UniqueArray
 *v0.3.10* Debug
 *v0.3.9* Pluggable
