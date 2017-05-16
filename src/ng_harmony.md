@@ -40,12 +40,13 @@ import { Plug } from "ng-harmony-enum";
 The `Tag-Decorator` is angulars directive-mechanism
 
 ```javascript
-export function Tag(val) {
+export function Component(val) {
 	return function decorator(target) {
 		let mod = angular.module(val.module) || angular.module(val.module, []);
 		mod.directive(val.selector, () => {
 			return {
 				controller: val.ctrl,
+				controllerAs: val.ctrlAs || null,
 				restrict: val.restrict || "A",
 				replace: val.replace || false,
 				templateUrl: val.templateUrl || null,
@@ -152,6 +153,13 @@ Minimal requirements of the err-obj:
 * "name": "MyInformationalError",
 * "message": "My Msg describing a situation deserving attention"
 
+Also the Decorator expects you to provide a default debug level:
+* debug
+* info
+* warn
+* error
+
+This way you can control/tune output of console.msgs in a more global manner
 ```javascript
 export function Logging(level) {
 	return function decorator(target) {
@@ -181,16 +189,19 @@ export function Validate() {
 			return target[prop];
 		}
 		descriptor.set = (val) => {
-			if (val === null || typeof val === "undefined")
+			if (val === null || typeof val === "undefined") {
 				if (isNullable) {
+					target[prop] = val;
 					return;
 				}
 				else {
 					throw new VoidError();
 				}
+			}
 			try {
-				if (typeof this[`_${prop}`] !== "undefined" && this[`_${prop}`] !== null)
+				if (typeof this[`_${prop}`] === "function") {
 					this[`_${prop}`](val);
+				}
 			}
 			catch (e) {
 				if (e.level === "info" || e.level ==="debug") {
@@ -204,35 +215,37 @@ export function Validate() {
 				let metadata = Reflect.getMetadata("typeof", target[prop]);
 				let t = metadata.type.name.toLowerCase();
 				if (val instanceof metadata.type) {
-					target[prop] = new metadata.type(val);
-				} else if (typeof val == t) {
 					target[prop] = val;
 				} else {
-					throw new InMemoryTypeValidationError();
+					try {
+						target[prop] = new metadata.type(val);
+					}
+					catch (e) {
+						this.log(new InMemoryTypeValidationError());
+						throw e;
+					}
 				}
 			}
 		}
 	}
 }
+```
 
+The Nullable Property Decorator allows for properties that are to be validated by the Validator Decorator
+to be null and be valid still
+
+```javascript
 export function Nullable () {
 	return function decorator(target, prop, descriptor) {
-		Reflect.defineMetadata("nullable", true, target, prop);
-
 		if (typeof target[prop] === "undefined") {
 			target[prop] = null;
 		}
+		Reflect.defineMetadata("nullable", true, target, prop);
 	}
 }
 
-export function Derived(o) {
+export function Transform(derive) {
 	return function decorator(target, prop, descriptor) {
-		let metadata = Reflect.hasMetadata("typeof", target[prop]) && Reflect.getMetadata("typeof", target[prop]);
-
-		if (!((new metadata.type()) instanceof PropertyTransform)) {
-			throw new Error();
-		}
-
 		let isNullable = (Reflect.hasMetadata("nullable", target[prop]) && Reflect.getMetadata("nullable", target[prop]));
 
 		descriptor.configurable = true;
@@ -246,7 +259,7 @@ export function Derived(o) {
 					throw new VoidError();
 				}
 			}
-			return target[prop].out();
+			return target[`_$(prop)`];
 		}
 		descriptor.set = (_o) => {
 			try {
@@ -258,9 +271,7 @@ export function Derived(o) {
 						throw new VoidError("No Input given");
 					}
 				}
-				target[prop] instanceof PropertyTransformer ?
-					target[prop].in(_o) :
-					new metadata.type(_o);
+				target[`_$(prop)`] = derive(_o);
 			}
 			catch (e) {
 				if (e.level === "info" || e.level ==="debug") {
@@ -273,16 +284,25 @@ export function Derived(o) {
 		}
 	}
 }
+```
+`Usage: `
+@AjaxMap([{
+		method: 'GET',
+		url: 'api/v2/datastuff'
+	}, {
+		method: 'POST',
+		url: 'api/v2/datastuff',
+		data: [...]
+	}])
+class MyAjaxService extends AjaxService {}
+```javascript
 
-export function IO (o) {
-	return function decorator (target) {
-		o.server.RECEPTOR.push(target);
-		target.MODEL = o.client;
+export function AjaxMap(o) {
+	return function decorator (target, prop, descriptor) {
+		target.MAP = o;
 	}
 }
 ```
-The Transient-Mixin for the Route/Stateful-Controllers
-
 `Usage:`
 Subscriber({
 	css: "body > myContainer > myComponent:nth-child(3)",
@@ -301,67 +321,16 @@ export function PubSub (...o) {
 export function Evented (...o) {
 	return function decorator (target, prop, descriptor) {
 		target.EVENTS = target.EVENTS || [];
-		o.forEach((ev) => { target.EVENTS.push(ev); });
-	}
-}
-```
-
-The `UniqueArray`-decorator enhances a property with getters and setters and
-guarantees uniqueness of it's elements by comparing property by property ...
-Should a new obj extend the old one, and be so to speak "at least" equal, but
-have some more properties, these will not be added
-
-```javascript
-export function UniqueArray() {
-	return function decorator(target, prop, descriptor) {
-		descriptor.configurable = true;
-		descriptor.enumerable = false;
-		descriptor.writable = true;
-		descriptor.get = () => {
-			return target[`_${prop}`] || [];
-		}
-		descriptor.set = (pushee) => {
-			let valid = !target[prop].filter((currentItem) => {
-	                let truthy = true;
-					Object.keys(curentItem).forEach((prop) => {
-						return truthy &= (newItem[prop] === currentItem[prop]);
-	                });
-	                return !!truthy;
-	            }).length;
-			target[prop].concat(valid ? _pushee : []);
-			return valid;
-		}
-	}
-}
-```
-
-Pluggable is the mechanism to provide for statefulness of controllers/components
-It seems convenient/useful to create for each interaction/state so called Plugs,
-then sum them up in small objects to describe ...
-
-`
-{
-	IN: EventPlug | Plug
-	transition: () => {
-		this.myInternalFoo();
-		this.myInternalFoo2();
-	}
-	OUT: Plug
-}
-`
-```javascript
-export function Pluggable(...plugs) {
-	return function decorator(target, prop, descriptor) {
-		plugs.forEach((plug, nr) => {
-			if (!plug instanceof Plug) {
-				throw new TypeMismatchError(`Plug ${nr} isn't of type plug`);
-			}
-		})
+		o.forEach((ev) => { target.EVENTS.push({
+			e: ev,
+			fn: prop
+		}); });
 	}
 }
 ```
 
 ## CHANGELOG
+*v0.3.11* Debugging n Adaption Session, getting rid of faulty UniqueArray
 *v0.3.10* Debug
 *v0.3.9* Pluggable
 *v0.3.8* UniqueArray
