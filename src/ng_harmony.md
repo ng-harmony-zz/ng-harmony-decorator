@@ -31,8 +31,8 @@ The Decorator foos are annotation-driving translators that allow you to use Angu
 Import all needed stuff
 
 ```javascript
-import "reflect-metadata";
-import "ng-harmony-log";
+import { Reflect } from "reflect-metadata";
+import { Log, NotImplementedError, VoidError, InMemoryTypeValidationError} from "ng-harmony-log";
 ```
 
 The `Tag-Decorator` is angulars directive-mechanism

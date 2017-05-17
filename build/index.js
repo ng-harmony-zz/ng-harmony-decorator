@@ -1,5 +1,5 @@
-import "reflect-metadata";
-import "ng-harmony-log";
+import { Reflect } from "reflect-metadata";
+import { Log, NotImplementedError, VoidError, InMemoryTypeValidationError} from "ng-harmony-log";
 
 export function Component(val) {
 	return function decorator(target) {
