@@ -20,7 +20,7 @@ export function Component(val) {
 
 export function Controller(val) {
 	return function decorator(target) {
-		let proto = this.prototype;
+		let proto = target.prototype;
 		Object.getOwnPropertyNames(proto).forEach((key, i) => {
 			if (typeof proto[key] === "function" && key[0] === "$") {
 				this.$scope[key] = proto[key].bind(this);
