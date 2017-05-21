@@ -57,18 +57,11 @@ export function Component(val) {
 
 export function Controller(val) {
 	return function decorator(target) {
-		let proto = target.prototype;
-		Object.getOwnPropertyNames(proto).forEach((key, i) => {
-			if (typeof proto[key] === "function" &&
-				key[0] === "$") {
-					this.$scope[key] = proto[key].bind(this);
-			}
-		});
-
 		let r = {};
 		r[val.module] = {
 			type: "controller",
-			name: target.name
+			name: target.name,
+			controllerAs: val.controllerAs || null
 		}
 		target.$register = r;
 		if (val.deps !== null && typeof val.deps !== "undefined") {
