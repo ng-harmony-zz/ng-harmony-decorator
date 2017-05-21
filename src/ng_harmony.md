@@ -57,11 +57,12 @@ export function Component(val) {
 
 export function Controller(val) {
 	return function decorator(target) {
+		target.CTRL_AS = val.controllerAs || null;
+		
 		let r = {};
 		r[val.module] = {
 			type: "controller",
 			name: target.name,
-			controllerAs: val.controllerAs || null
 		}
 		target.$register = r;
 		if (val.deps !== null && typeof val.deps !== "undefined") {
