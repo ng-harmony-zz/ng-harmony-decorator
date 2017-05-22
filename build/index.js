@@ -77,10 +77,7 @@ export function Logging(level) {
 	return function decorator(target) {
 		Object.keys(Log).forEach((k, j) => {
 			(target.prototype[k] === null || typeof target.prototype[k] === "undefined") &&
-			Object.defineProperty(target.prototype, k, {
-				value: () => { throw new NotImplementedError(k); },
-				enumerable: true
-			});
+			Object.defineProperty(target.prototype, k, Object.getOwnPropertyDescriptor(Log, k));
 		});
 		target.DEBUG_LEVEL = level || "info";
 	}
