@@ -51,8 +51,8 @@ export function Service(val) {
 export function Mixin(...mixins) {
 	return function decorator(target) {
 		for (let [i, mixin] of mixins.entries()) {
-			Object.keys(mixin).forEach((k, j) => {
-				(target.prototype[k] === null || typeof target.prototype[k] === "undefined") && Object.defineProperty(target.prototype, k, Object.getOwnPropertyDescriptor(mixin, k));
+			Object.getOwnPropertyNames(mixin.prototype).forEach((k, j) => {
+				(target.prototype[k] === null || typeof target.prototype[k] === "undefined") && Object.defineProperty(target.prototype, k, Object.getOwnPropertyDescriptor(mixin.prototype, k));
 			});
 		}
 	};
@@ -61,7 +61,7 @@ export function Mixin(...mixins) {
 export function Implements(...interfaces) {
 	return function decorator(target) {
 		for (let [i, Interface] of interfaces.entries()) {
-			Object.keys(Interface).forEach((k, j) => {
+			Object.getOwnPropertyNames(Interface.prototype).forEach((k, j) => {
 				(target.prototype[k] === null || typeof target.prototype[k] === "undefined") && Object.defineProperty(target.prototype, k, {
 					value: () => {
 						throw new NotImplementedError(k);
@@ -75,8 +75,8 @@ export function Implements(...interfaces) {
 
 export function Logging(level) {
 	return function decorator(target) {
-		Object.keys(Log).forEach((k, j) => {
-			(target.prototype[k] === null || typeof target.prototype[k] === "undefined") && Object.defineProperty(target.prototype, k, Object.getOwnPropertyDescriptor(Log, k));
+		Object.getOwnPropertyNames(Log.prototype).forEach((k, j) => {
+			(target.prototype[k] === null || typeof target.prototype[k] === "undefined") && Object.defineProperty(target.prototype, k, Object.getOwnPropertyDescriptor(Log.prototype, k));
 		});
 		target.DEBUG_LEVEL = level || "info";
 	};
