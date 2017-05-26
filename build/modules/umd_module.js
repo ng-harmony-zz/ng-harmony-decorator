@@ -190,7 +190,7 @@ export function Evented(...o) {
 		target.EVENTS = target.EVENTS || [];
 		o.forEach(ev => {
 			target.EVENTS.push({
-				e: ev,
+				ev: ev,
 				fn: prop
 			});
 		});
