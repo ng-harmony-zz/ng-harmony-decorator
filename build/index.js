@@ -193,8 +193,8 @@ export function AjaxMap(o) {
 
 export function Evented (...o) {
 	return function decorator (target, prop, descriptor) {
-		target.EVENTS = target.EVENTS || [];
-		o.forEach((ev) => { target.EVENTS.push({
+		target.constructor.EVENTS = target.constructor.EVENTS || [];
+		o.forEach((ev) => { target.constructor.EVENTS.push({
 			ev: ev,
 			fn: prop
 		}); });
