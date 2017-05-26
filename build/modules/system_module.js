@@ -6,8 +6,8 @@ export function Component(val) {
 		let mod = angular.module(val.module) || angular.module(val.module, []);
 		mod.directive(val.selector, () => {
 			return {
-				controller: val.ctrl,
-				controllerAs: val.ctrlAs || null,
+				controller: val.controller,
+				controllerAs: val.controllerAs || target.CTRL_AS || null,
 				restrict: val.restrict || "A",
 				replace: val.replace || false,
 				templateUrl: val.templateUrl || null,
@@ -25,7 +25,7 @@ export function Controller(val) {
 		let r = {};
 		r[val.module] = {
 			type: "controller",
-			name: target.name
+			name: val.name || target.name
 		};
 		target.$register = r;
 		if (val.deps !== null && typeof val.deps !== "undefined") {
