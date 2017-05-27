@@ -155,10 +155,9 @@ This way you can control/tune output of console.msgs in a more global manner
 ```javascript
 export function Logging(config) {
 	return function decorator(target) {
-		Object.getOwnPropertyNames(Log.prototype).forEach((k, j) => {
-			(target.prototype[k] === null || typeof target.prototype[k] === "undefined") &&
-			Object.defineProperty(target.prototype, k, Object.getOwnPropertyDescriptor(Log.prototype, k));
-		});
+		target.prototype.log = (function({ level, msg }, e = {}) {
+			this.Logger[level](e, msg);
+		}).bind(target.constructor);
 		Log.create.call(target.constructor, {
 			loggerName: config.loggerName,
 			rollbarToken: config.remoteLoggerToken || null,
