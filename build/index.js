@@ -73,13 +73,17 @@ export function Implements(...interfaces) {
 	}
 }
 
-export function Logging(level) {
+export function Logging(config) {
 	return function decorator(target) {
 		Object.getOwnPropertyNames(Log.prototype).forEach((k, j) => {
 			(target.prototype[k] === null || typeof target.prototype[k] === "undefined") &&
 			Object.defineProperty(target.prototype, k, Object.getOwnPropertyDescriptor(Log.prototype, k));
 		});
-		target.DEBUG_LEVEL = level || "info";
+		Log.create.call(target.constructor, {
+			rollbarToken: config.remoteLoggerToken || null,
+			environment: config.environment,
+			npmPackageVersion: config.npmPackageVersion
+		});
 	}
 }
 
