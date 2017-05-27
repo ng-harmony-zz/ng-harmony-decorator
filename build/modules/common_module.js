@@ -77,12 +77,15 @@ export function Logging(config) {
 	return function decorator(target) {
 		target.prototype.log = function ({ level, msg }, e = {}) {
 			this.Logger[level](e, msg);
-		}.bind(target.constructor);
-		Log.create.call(target.constructor, {
-			loggerName: config.loggerName,
-			rollbarToken: config.remoteLoggerToken || null,
-			environment: config.environment,
-			npmPackageVersion: config.npmPackageVersion
+		}.bind(target.prototype);
+		Object.defineProperty(target.prototype, Logger, {
+			value: Log.create.call(target.prototype, {
+				loggerName: config.loggerName,
+				rollbarToken: config.remoteLoggerToken || null,
+				environment: config.environment,
+				npmPackageVersion: config.npmPackageVersion
+			}),
+			enumerable: false
 		});
 	};
 }
