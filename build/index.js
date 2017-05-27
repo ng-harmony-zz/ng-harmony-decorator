@@ -78,7 +78,7 @@ export function Logging(config) {
 		target.prototype.log = (function({ level, msg }, e = {}) {
 			this.Logger[level](e, msg);
 		}).bind(target.prototype);
-		Object.defineProperty(target.prototype, Logger, {
+		Object.defineProperty(target.prototype, "Logger", {
 			value: Log.create.call(target.prototype, {
 				loggerName: config.loggerName,
 				rollbarToken: config.remoteLoggerToken || null,
