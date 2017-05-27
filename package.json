@@ -1,7 +1,7 @@
 {
   "name": "ng-harmony-decorator",
   "description": "Decorators for Angular 1",
-  "version": "0.3.27",
+  "version": "0.3.28",
   "homepage": "https://github.com/ng-harmony/ng-harmony-decorator",
   "author": {
     "name": "joehannes",
@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "babel-plugin-type-metadata": "^0.4.0",
-    "ng-harmony-log": "^0.2.0",
+    "ng-harmony-log": "^0.2.2",
     "reflect-metadata": "^0.1.10"
   },
   "devDependencies": {
