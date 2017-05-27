@@ -160,6 +160,7 @@ export function Logging(config) {
 			Object.defineProperty(target.prototype, k, Object.getOwnPropertyDescriptor(Log.prototype, k));
 		});
 		Log.create.call(target.constructor, {
+			loggerName: config.loggerName,
 			rollbarToken: config.remoteLoggerToken || null,
 			environment: config.environment,
 			npmPackageVersion: config.npmPackageVersion
