@@ -1,8 +1,8 @@
 ![Harmony = 6 + 7;](src/logo.png "Harmony - Fire in my eyes")
 
 #CHECK OUT THE NEW DEMO
-* [code](www.github.com/ng-harmony/ng-harmony-demo)
-* [in_the_wild](joehannes-job.github.io/compucorp)
+* [code](http://www.github.com/ng-harmony/ng-harmony-demo)
+* [in_the_wild](http://joehannes-job.github.io/compucorp)
 
 
 ## Synopsis
