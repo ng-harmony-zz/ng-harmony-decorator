@@ -107,51 +107,26 @@ export function Mixin(...mixins) {
 	}
 }
 ```
-Interface Emulation
-`Usage:`
-@Implements(EmailInterface)
-class EmailValidator
-
-@Implements(PhoneNrInterface, SIPNrInterface, SocialInterface)
-class ContactValidator
-
--> Hereby you can actually force implementation, as the defaulted methods will
-throw a `NotImplementedError` unless overridden
-
-```javascript
-export function Implements(...interfaces) {
-	return function decorator(target) {
-		for (let [i, Interface] of interfaces.entries()) {
-			Object.getOwnPropertyNames(Interface.prototype).forEach((k, j) => {
-				(target.prototype[k] === null || typeof target.prototype[k] === "undefined") &&
-				Object.defineProperty(target.prototype, k, {
-					value: () => { throw new NotImplementedError(k); },
-					enumerable: true
-				});
-			});
-		}
-	}
-}
-```
 
 The Logger-Mixin Decorator
 
 Subsequently your class will provide a `log`-instance method.
-The log-method expects 1 param, usually an Error-Object.
+The log-method expects 1 config-Object and an optional Error-Instance:
+Config Obj: { level, msg }
 
-Minimal requirements of the err-obj:
+* "level": "debug|info|warn|error ..." see bunyan on npm for details
+* "msg": "My Msg describing a situation deserving attention"
 
-* "level": "debug|info|warn|error",
-* "name": "MyInformationalError",
-* "message": "My Msg describing a situation deserving attention"
+Also the Decorator expects you to provide:
+{ 
+	loggerName: "string",
+	environment: "development|production",
+	npmPackageVersion: "your package.json version nr",
+	"remoteLoggerToken": "your_Rollbar.com_appToken"
+}
 
-Also the Decorator expects you to provide a default debug level:
-* debug
-* info
-* warn
-* error
+RemoteLoggerToken is optional.
 
-This way you can control/tune output of console.msgs in a more global manner
 ```javascript
 export function Logging(config) {
 	return function decorator(target) {
@@ -165,141 +140,23 @@ export function Logging(config) {
 				environment: config.environment,
 				npmPackageVersion: config.npmPackageVersion
 			}),
-			enumerable: false
+			enumerable: true
 		});
 		
 	}
 }
 ```
 
-Validator class property decorator
+Method-Decorator to create Controller based Eventing like so:
+
+@Evented({
+	selector: "#myCSS.selector > section *:first-child:not(:last-child)",
+	type: "click|..." - the usual events, for all events see fat/bean
+	delegate: "li.repeated-item a.subitem" - provides the $scope.n index nr
+})
+myFn () { return "business as usual"; }
 
 ```javascript
-export function Validate() {
-	return function decorator(target, prop, descriptor) {
-		let isNullable = (Reflect.hasMetadata("nullable", target[prop]) && Reflect.getMetadata("nullable", target[prop]));
-
-		descriptor.configurable = true;
-		descriptor.enumerable = true;
-		descriptor.writable = true;
-		descriptor.get = () => {
-			return target[prop];
-		}
-		descriptor.set = (val) => {
-			if (val === null || typeof val === "undefined") {
-				if (isNullable) {
-					target[prop] = val;
-					return;
-				}
-				else {
-					throw new VoidError();
-				}
-			}
-			try {
-				if (typeof this[`_${prop}`] === "function") {
-					this[`_${prop}`](val);
-				}
-			}
-			catch (e) {
-				if (e.level === "info" || e.level ==="debug") {
-					this.log(e);
-					return;
-				} else {
-					throw e;
-				}
-			}
-			if (Reflect.hasMetadata("typeof", target[prop])) {
-				let metadata = Reflect.getMetadata("typeof", target[prop]);
-				let t = metadata.type.name.toLowerCase();
-				if (val instanceof metadata.type) {
-					target[prop] = val;
-				} else {
-					try {
-						target[prop] = new metadata.type(val);
-					}
-					catch (e) {
-						this.log(new InMemoryTypeValidationError());
-						throw e;
-					}
-				}
-			}
-		}
-	}
-}
-```
-
-The Nullable Property Decorator allows for properties that are to be validated by the Validator Decorator
-to be null and be valid still
-
-```javascript
-export function Nullable () {
-	return function decorator(target, prop, descriptor) {
-		if (typeof target[prop] === "undefined") {
-			target[prop] = null;
-		}
-		Reflect.defineMetadata("nullable", true, target, prop);
-	}
-}
-
-export function Transform(derive) {
-	return function decorator(target, prop, descriptor) {
-		let isNullable = (Reflect.hasMetadata("nullable", target[prop]) && Reflect.getMetadata("nullable", target[prop]));
-
-		descriptor.configurable = true;
-		descriptor.enumerable = false;
-		descriptor.writable = true;
-		descriptor.get = () => {
-			if (target[prop] === null || typeof target[prop] === "undefined") {
-				if (isNullable) {
-					return null;
-				} else {
-					throw new VoidError();
-				}
-			}
-			return target[`_$(prop)`];
-		}
-		descriptor.set = (_o) => {
-			try {
-				if (_o === null || typeof _o === "undefined") {
-					if (isNullable) {
-						return;
-					}
-					else {
-						throw new VoidError("No Input given");
-					}
-				}
-				target[`_$(prop)`] = derive(_o);
-			}
-			catch (e) {
-				if (e.level === "info" || e.level ==="debug") {
-					this.log(e);
-					return;
-				} else {
-					throw e;
-				}
-			}
-		}
-	}
-}
-```
-`Usage: `
-@AjaxMap([{
-		method: 'GET',
-		url: 'api/v2/datastuff'
-	}, {
-		method: 'POST',
-		url: 'api/v2/datastuff',
-		data: [...]
-	}])
-class MyAjaxService extends AjaxService {}
-```javascript
-
-export function AjaxMap(o) {
-	return function decorator (target, prop, descriptor) {
-		target.MAP = o;
-	}
-}
-
 export function Evented (...o) {
 	return function decorator (target, prop, descriptor) {
 		target.constructor.EVENTS = target.constructor.EVENTS || [];
@@ -312,6 +169,7 @@ export function Evented (...o) {
 ```
 
 ## CHANGELOG
+*v0.4.0* Getting rid of the fancy stuff
 *v0.3.13* Publish bump
 *v0.3.12* More Debugging
 *v0.3.11* Debugging n Adaption Session, getting rid of faulty UniqueArray
