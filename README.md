@@ -2,7 +2,7 @@
 
 #CHECK OUT THE NEW DEMO
 * [code](http://www.github.com/ng-harmony/ng-harmony-demo)
-* [in_the_wild](http://joehannes-job.github.io/compucorp)
+* [in_the_wild](http://joehannes-jobs.github.io/compucorp)
 
 
 ## Synopsis
