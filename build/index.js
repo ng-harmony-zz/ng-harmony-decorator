@@ -21,7 +21,7 @@ export function Component(val) {
 export function Controller(val) {
 	return function decorator(target) {
 		target.CTRL_AS = val.controllerAs || null;
-		
+
 		let r = {};
 		r[val.module] = {
 			type: "controller",
@@ -73,7 +73,7 @@ export function Logging(config) {
 			}),
 			enumerable: true
 		});
-		
+
 	}
 }
 

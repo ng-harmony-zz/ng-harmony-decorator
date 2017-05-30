@@ -1,16 +1,25 @@
 ![Harmony = 6 + 7;](src/logo.png "Harmony - Fire in my eyes")
 
 #CHECK OUT THE NEW DEMO
-www.github.com/ng-harmony/ng-harmony-demo
+* [code](www.github.com/ng-harmony/ng-harmony-demo)
+* [in_the_wild](joehannes-job.github.io/compucorp)
+
 
 ## Synopsis
 
 Typescript or Angular > 1 Style Decorators for AngularJS
 
+Just for clarification because I'm seeing more downloads on decorator than on the other repos, especially core/controller:
+
+These Decorators are designed to work in conjunction with ng-harmony-core or other ng-harmony-* respectively.
+All the decorators themselves achieve is very little usually:
+* adding the given objs as a static class prop (which is then worked on in core/controller/log ...)
+* ...
+
 ## Code Example
 
 ```javascript
-import { EventedController as Ctrl } from "ng-harmony";
+import { EventedController as Ctrl } from "ng-harmony-controller";
 import { Component, Controller, Loggging, Evented } from "ng-harmony-decorator";
 ```
 

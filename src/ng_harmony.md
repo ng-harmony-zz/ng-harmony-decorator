@@ -58,7 +58,7 @@ export function Component(val) {
 export function Controller(val) {
 	return function decorator(target) {
 		target.CTRL_AS = val.controllerAs || null;
-		
+
 		let r = {};
 		r[val.module] = {
 			type: "controller",
@@ -118,7 +118,7 @@ Config Obj: { level, msg }
 * "msg": "My Msg describing a situation deserving attention"
 
 Also the Decorator expects you to provide:
-{ 
+{
 	loggerName: "string",
 	environment: "development|production",
 	npmPackageVersion: "your package.json version nr",
@@ -142,7 +142,7 @@ export function Logging(config) {
 			}),
 			enumerable: true
 		});
-		
+
 	}
 }
 ```
@@ -150,7 +150,7 @@ export function Logging(config) {
 Method-Decorator to create Controller based Eventing like so:
 
 @Evented({
-	selector: "#myCSS.selector > section *:first-child:not(:last-child)",
+	selector: "#myCSS.selector > section:first-child:not(:last-child)",
 	type: "click|..." - the usual events, for all events see fat/bean
 	delegate: "li.repeated-item a.subitem" - provides the $scope.n index nr
 })
